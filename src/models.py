@@ -63,6 +63,12 @@ class Planet(db.Model):
             # do not serialize the password, its a security breach
         }
 
+    def serializeAbs(self):
+        return{
+            "id":self.id,
+            "name":self.name
+        }
+
 #----------------------------------------------CHARACTER----------------------------------------
 
 class Character(db.Model):
@@ -160,6 +166,12 @@ class Specie(db.Model):
             "planet_id":self.planet_id,
             "characters": list(map(lambda x: x.serializeAbs(), self.characters)),
         }
+    
+    def serializeAbs(self):
+        return{
+            "id":self.id,
+            "name":self.name
+        }
 
 #----------------------------------------------FILM----------------------------------------
 
@@ -180,7 +192,7 @@ film_species = db.Table('film_species',
 
 class Film(db.Model):
     id=db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(250), nullable=False)
+    title = db.Column(db.String(250), nullable=False)
     episode_id = db.Column(db.Integer, nullable=False)
     producer = db.Column(db.String(250), nullable=False)
     director = db.Column(db.String(250), nullable=False)
@@ -191,15 +203,18 @@ class Film(db.Model):
     species = db.relationship('Specie', secondary=film_species, lazy='subquery',backref=db.backref('Film', lazy=True))
 
     def __repr__(self):
-        return '<Film %r>' % self.name
+        return '<Film %r>' % self.title
     
     def serialize(self):
         return{
             "id":self.id,
-            "name":self.id,
+            "title":self.title,
             "episode_id":self.episode_id,
             "producer":self.producer,
             "director":self.director,
             "release_date":self.release_date,
-            "opening":self.opening
+            "opening":self.opening,
+            "characters": list(map(lambda x: x.serializeAbs(), self.characters)),
+            "planets": list(map(lambda x: x.serializeAbs(), self.planets)),
+            "species": list(map(lambda x: x.serializeAbs(), self.species)),
         }
