@@ -49,7 +49,7 @@ def create_user():
         db.session.commit()
         return jsonify({"msj":"User created"}),200
 
-@app.route('/login',methods=['GET'])
+@app.route('/login',methods=['POST'])
 def login():
     email= request.json.get("email",None)
     password= request.json.get("password",None)
