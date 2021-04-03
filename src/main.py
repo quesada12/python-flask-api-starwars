@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Planet, Character, Favorite
+from models import db, User, Planet, Character, Favorite, Specie
 #from models import Person
 
 app = Flask(__name__)
@@ -30,6 +30,9 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+#----------------------------------------------USER & FAVORITES----------------------------------------
+
+#Return user's info
 @app.route('/user', methods=['GET'])
 def get_all_users():
 
@@ -37,11 +40,59 @@ def get_all_users():
     all_users = list(map(lambda x: x.serialize(), result))
     return jsonify(all_users), 200
 
+#Return favorites of a user
+@app.route('/user/<int:tid>/favorites', methods=['GET'])
+def get_user_favorite(tid):
+
+    user = User.query.get(tid)
+
+    if user is None:
+        raise APIException('User not found', status_code=404)
+
+    return jsonify(user.serializeFavorites()), 200  
+
+#Insert a favorite
+@app.route('/user/<int:tid>/favorites', methods=['POST'])
+def post_user_favorite(tid):
+
+    user = User.query.get(tid)
+
+    if user is None:
+        raise APIException('User not found', status_code=404)
+
+    request_body = request.get_json()
+    favorite = Favorite(user_id=tid, favorite_id=request_body["favorite_id"],favorite_name=request_body["favorite_name"],favorite_type=request_body["favorite_type"])
+    db.session.add(favorite)
+    db.session.commit()
+
+    return jsonify(user.get_user_favorites()), 200 
+
+#Delete a favorite
+@app.route('/favorite/<int:fid>', methods=['DELETE'])
+def delete_favorite(fid):
+
+    favorite = Favorite.query.get(fid)
+
+    if favorite is None:
+        raise APIException('Favorite not found', status_code=404)
+    db.session.delete(favorite)
+    db.session.commit()
+
+    response = {
+        "msg":"Favorite deleted"
+    }
+
+    return jsonify(response), 200    
+
+#----------------------------------------------PLANET----------------------------------------
+
 @app.route('/planet', methods=['GET'])
 def get_all_planets():
     result = Planet.query.all()
     all_planets = list(map(lambda x: x.serialize(), result))
     return jsonify(all_planets), 200
+
+#----------------------------------------------CHARACTER----------------------------------------
 
 @app.route('/character', methods=['GET'])
 def get_all_characters():
@@ -49,11 +100,15 @@ def get_all_characters():
     all_characters = list(map(lambda x: x.serialize(), result))
     return jsonify(all_characters), 200
 
-@app.route('/favorite', methods=['GET'])
-def get_all_favorites():
-    result = Favorite.query.all()
-    all_favorites = list(map(lambda x: x.serialize(), result))
-    return jsonify(all_favorites), 200
+#----------------------------------------------SPECIE----------------------------------------
+
+@app.route('/specie', methods=['GET'])
+def get_all_species():
+    result = Specie.query.all()
+    all_species = list(map(lambda x: x.serialize(), result))
+    return jsonify(all_species), 200
+
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':

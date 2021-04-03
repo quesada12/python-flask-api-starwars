@@ -2,6 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+#----------------------------------------------USER----------------------------------------
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -16,11 +18,16 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            "favorites":list(map(lambda x: x.serialize(), self.favorites))
+            #"favorites":list(map(lambda x: x.serialize(), self.favorites))
             # do not serialize the password, its a security breach
         }
 
-#STAR WARS CLASSES
+    def serializeFavorites(self):
+        return{
+            "favorites":list(map(lambda x: x.serialize(),self.favorites))
+        }
+
+#----------------------------------------------PLANET----------------------------------------
 
 class Planet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +41,7 @@ class Planet(db.Model):
     terrain = db.Column(db.String(250), nullable=False)
     surface_water = db.Column(db.Integer)  
     characters = db.relationship('Character',backref='planet', lazy=True)
+    species = db.relationship('Specie',backref='planet', lazy=True)
 
     def __repr__(self):
         return '<Planet %r>' % self.name
@@ -50,10 +58,12 @@ class Planet(db.Model):
             "climate":self.climate,
             "terrain":self.terrain,
             "surface_water":self.surface_water,
-            "characters": list(map(lambda x: x.serialize(), self.characters)),
+            "characters": list(map(lambda x: x.serializeAbs(), self.characters)),
             #"species": list(map(lambda x: x.serialize(), self.species))
             # do not serialize the password, its a security breach
         }
+
+#----------------------------------------------CHARACTER----------------------------------------
 
 class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -84,6 +94,14 @@ class Character(db.Model):
             "planet_id":self.planet_id
         }
 
+    def serializeAbs(self):
+        return{
+            "id":self.id,
+            "name":self.name
+        }
+
+#----------------------------------------------FAVORITE---------------------------------------- 
+
 class Favorite(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'),nullable=True)
@@ -97,8 +115,91 @@ class Favorite(db.Model):
     def serialize(self):
         return{
             "id": self.id,
-            "user_id": self.user_id,
+            #"user_id": self.user_id,
             "favorite_id": self.favorite_id,
             "favorite_name": self.favorite_name,
             "favorite_type": self.favorite_type
+        }
+
+#----------------------------------------------SPECIE----------------------------------------
+
+species_characters = db.Table('species_characters',
+    db.Column('character_id', db.Integer, db.ForeignKey('character.id'), primary_key=True),
+    db.Column('specie_id', db.Integer, db.ForeignKey('specie.id'), primary_key=True)
+)
+
+class Specie(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    classification = db.Column(db.String(250), nullable=False)
+    designation = db.Column(db.String(250))
+    average_height = db.Column(db.Integer)
+    average_lifespan = db.Column(db.Integer)
+    hair_colors = db.Column(db.String(250))
+    skin_colors = db.Column(db.String(250))
+    eye_colors = db.Column(db.String(250))
+    language = db.Column(db.String(250))
+    planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'),nullable=True)
+    characters = db.relationship('Character', secondary=species_characters, lazy='subquery',backref=db.backref('Specie', lazy=True))
+
+    def __repr__(self):
+        return '<Specie %r>' % self.name
+
+    def serialize(self):
+        return{
+            "id":self.id,
+            "name":self.name,
+            "classification":self.classification,
+            "designation":self.designation,
+            "average_height":self.average_height,
+            "average_lifespan":self.average_lifespan,
+            "hair_colors":self.hair_colors,
+            "skin_colors":self.skin_colors,
+            "eye_colors":self.eye_colors,
+            "language":self.language,
+            "planet_id":self.planet_id,
+            "characters": list(map(lambda x: x.serializeAbs(), self.characters)),
+        }
+
+#----------------------------------------------FILM----------------------------------------
+
+film_characters = db.Table('film_characters',
+    db.Column('character_id', db.Integer, db.ForeignKey('character.id'), primary_key=True),
+    db.Column('film_id', db.Integer, db.ForeignKey('film.id'), primary_key=True)
+)
+
+film_planets = db.Table('film_planets',
+    db.Column('planet_id', db.Integer, db.ForeignKey('planet.id'), primary_key=True),
+    db.Column('film_id', db.Integer, db.ForeignKey('film.id'), primary_key=True)
+)
+
+film_species = db.Table('film_species',
+    db.Column('specie_id', db.Integer, db.ForeignKey('specie.id'), primary_key=True),
+    db.Column('film_id', db.Integer, db.ForeignKey('film.id'), primary_key=True)
+)
+
+class Film(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    episode_id = db.Column(db.Integer, nullable=False)
+    producer = db.Column(db.String(250), nullable=False)
+    director = db.Column(db.String(250), nullable=False)
+    release_date = db.Column(db.String(250), nullable=False)
+    opening = db.Column(db.String(8000))
+    characters = db.relationship('Character', secondary=film_characters, lazy='subquery',backref=db.backref('Film', lazy=True))
+    planets = db.relationship('Planet', secondary=film_planets, lazy='subquery',backref=db.backref('Film', lazy=True))
+    species = db.relationship('Specie', secondary=film_species, lazy='subquery',backref=db.backref('Film', lazy=True))
+
+    def __repr__(self):
+        return '<Film %r>' % self.name
+    
+    def serialize(self):
+        return{
+            "id":self.id,
+            "name":self.id,
+            "episode_id":self.episode_id,
+            "producer":self.producer,
+            "director":self.director,
+            "release_date":self.release_date,
+            "opening":self.opening
         }
