@@ -59,6 +59,16 @@ def login():
     else:
         return jsonify({"msj":"Error"}),401
 
+@app.route('/user',methods=['POST'])
+def get_user():
+    email= request.json.get("email",None)
+    password= request.json.get("password",None)
+    user = User.query.filter_by(email=email,password=password).first()
+    if user:
+        return jsonify(user.serialize()),200
+    else:
+        return jsonify({"msj":"Error"}),401
+
 
 #Return all users
 @app.route('/user', methods=['GET'])
@@ -94,7 +104,7 @@ def post_user_favorite(tid):
     db.session.add(favorite)
     db.session.commit()
 
-    return jsonify(user.get_user_favorites()), 200 
+    return jsonify(favorite.serialize()), 200 
 
 #Delete a favorite
 @app.route('/favorite/<int:fid>', methods=['DELETE'])
