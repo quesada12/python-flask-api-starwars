@@ -123,6 +123,18 @@ def delete_favorite(fid):
 
     return jsonify(response), 200    
 
+@app.route('/favorite',methods=['POST'])
+def get_favorite():
+    favorite_name= request.json.get("favorite_name",None)
+    favorite_type= request.json.get("favorite_type",None)
+    favorite_id= request.json.get("favorite_id",None)
+    user_id= request.json.get("user_id",None)
+    favorite = Favorite.query.filter_by(favorite_name=favorite_name,favorite_id=favorite_id,favorite_type=favorite_type,user_id=user_id).first()
+    if favorite:
+        return jsonify(favorite.serialize()),200
+    else:
+        return jsonify({"msj":"Error"}),401
+
 #----------------------------------------------PLANET----------------------------------------
 
 #Get all Planets
