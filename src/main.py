@@ -37,10 +37,8 @@ def sitemap():
 def create_user():
     email= request.json.get("email",None)
     password= request.json.get("password",None)
-    user = User.query.filter_by(email=email,password=password).first()
-    if user:
-        return jsonify({"msj":"User already exists"}),401
-    else:
+    user = User.query.filter_by(email=email).first()
+    if user is None:
         new_user=User()
         new_user.email=email
         new_user.password=password
@@ -48,6 +46,8 @@ def create_user():
         db.session.add(new_user)
         db.session.commit()
         return jsonify({"msj":"User created"}),200
+    else:
+        return jsonify({"msj":"User already exists"}),401
 
 @app.route('/login',methods=['POST'])
 def login():
