@@ -218,6 +218,33 @@ def get_film(id):
 
 
 
+#Insert a favorite
+@app.route('/data', methods=['GET'])
+def insert_test_data():
+
+    user = User(email="prueba@prueba.com",password="starwars",is_active=True)
+    db.session.add(user)
+    planet1 = Planet(name="Tattoine",diameter=10465,rotation_period=23,orbital_period=304,gravity="1 standard",population=200000,climate="arid",terrain="desert",surface_water=1)
+    db.session.add(planet1)
+    planet2 = Planet(name="Alderaan",diameter=12500,rotation_period=24,orbital_period=364,gravity="1 standard",population=2000000000,climate="temperate",terrain="grassland,mountains",surface_water=40)
+    db.session.add(planet2)
+
+    character = Character(name="Luke Skywalker",height=172,mass=77,hair_color="blond",skin_color="fair",eye_color="blue",birth_year="19BBY",gender="male",planet_id=1)
+    db.session.add(character)
+    character2 = Character(name="Leia Organa",height=150,mass=49,hair_color="brown",skin_color="light",eye_color="brown",birth_year="19BBY",gender="female",planet_id=2)
+    db.session.add(character2)
+    specie= Specie(name="Human",classification="mammal",designation="sentient",average_height=180,average_lifespan=120,hair_colors="blonde, brown, black, red",skin_colors="caucasian, black, asian, hispanic",eye_colors="brown, blue, green, hazel, grey, amber",language="Galactic Basic",planet_id=1)
+    db.session.add(specie)
+    film = Film(title="A New Hope",episode_id=4,producer="Gary Kurtz, Rick McCallum",director="George Lucas",release_date="1977-05-25",opening="It is a period of civil war. Rebel spaceships, striking from a hidden base, have won their first victory against the evil Galactic Empire. During the battle, Rebel spies managed to steal secret plans to the Empire's ultimate weapon, the DEATH STAR, an armored space station with enough power to destroy an entire planet. Pursued by the Empire's sinister agents, Princess Leia races home aboard her starship, custodian of the stolen plans that can save her people and restore freedom to the galaxy....")
+    db.session.add(film)
+
+    db.session.commit()
+   
+
+    
+
+    return jsonify({"msg","done"}), 200 
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
