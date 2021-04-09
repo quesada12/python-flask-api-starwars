@@ -9,6 +9,7 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Planet, Character, Favorite, Specie, Film
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 #from models import Person
 
 app = Flask(__name__)
@@ -19,6 +20,9 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
+
+app.config["JWT_SECRET_KEY"] = "darksiderules"
+jwt = JWTManager(app)
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -55,7 +59,8 @@ def login():
     password= request.json.get("password",None)
     user = User.query.filter_by(email=email,password=password).first()
     if user:
-        return jsonify({"msj":"Welcome"}),200
+        access_token = create_access_token(identity=user.id)
+        return jsonify({"token":access_token}),200
     else:
         return jsonify({"msj":"Error"}),401
 
@@ -80,6 +85,7 @@ def get_all_users():
 
 #Return favorites of a user
 @app.route('/user/<int:tid>/favorites', methods=['GET'])
+@jwt_required()
 def get_user_favorite(tid):
 
     user = User.query.get(tid)
@@ -91,6 +97,7 @@ def get_user_favorite(tid):
 
 #Insert a favorite
 @app.route('/user/<int:tid>/favorites', methods=['POST'])
+@jwt_required()
 def post_user_favorite(tid):
 
     user = User.query.get(tid)
@@ -108,6 +115,7 @@ def post_user_favorite(tid):
 
 #Delete a favorite
 @app.route('/favorite/<int:fid>', methods=['DELETE'])
+@jwt_required()
 def delete_favorite(fid):
 
     favorite = Favorite.query.get(fid)
@@ -124,6 +132,7 @@ def delete_favorite(fid):
     return jsonify(response), 200    
 
 @app.route('/favorite',methods=['POST'])
+@jwt_required()
 def get_favorite():
     favorite_name= request.json.get("favorite_name",None)
     favorite_type= request.json.get("favorite_type",None)
@@ -139,6 +148,7 @@ def get_favorite():
 
 #Get all Planets
 @app.route('/planet', methods=['GET'])
+@jwt_required()
 def get_all_planets():
     result = Planet.query.all()
     all_planets = list(map(lambda x: x.serialize(), result))
@@ -146,6 +156,7 @@ def get_all_planets():
 
 #Get one Planet
 @app.route('/planet/<int:id>', methods=['GET'])
+@jwt_required()
 def get_planet(id):
 
     planet = Planet.query.get(id)
@@ -159,6 +170,7 @@ def get_planet(id):
 
 #Get all characters
 @app.route('/character', methods=['GET'])
+@jwt_required()
 def get_all_characters():
     result = Character.query.all()
     all_characters = list(map(lambda x: x.serialize(), result))
@@ -166,6 +178,7 @@ def get_all_characters():
 
 #Get one Character
 @app.route('/character/<int:id>', methods=['GET'])
+@jwt_required()
 def get_character(id):
 
     character = Character.query.get(id)
@@ -179,6 +192,7 @@ def get_character(id):
 
 #Get all Species
 @app.route('/specie', methods=['GET'])
+@jwt_required()
 def get_all_species():
     result = Specie.query.all()
     all_species = list(map(lambda x: x.serialize(), result))
@@ -186,6 +200,7 @@ def get_all_species():
 
 #Get one Specie
 @app.route('/specie/<int:id>', methods=['GET'])
+@jwt_required()
 def get_specie(id):
 
     specie = Specie.query.get(id)
@@ -200,6 +215,7 @@ def get_specie(id):
 
 #Get all Films
 @app.route('/film', methods=['GET'])
+@jwt_required()
 def get_all_film():
     result = Film.query.all()
     all_films = list(map(lambda x: x.serialize(), result))
@@ -207,6 +223,7 @@ def get_all_film():
 
 #Get one Film
 @app.route('/film/<int:id>', methods=['GET'])
+@jwt_required()
 def get_film(id):
 
     film = Film.query.get(id)
@@ -218,32 +235,28 @@ def get_film(id):
 
 
 
-#Insert a favorite
-@app.route('/data', methods=['GET'])
-def insert_test_data():
+# #Insert a favorite
+# @app.route('/data', methods=['GET'])
+# def insert_test_data():
 
-    user = User(email="prueba@prueba.com",password="starwars",is_active=True)
-    db.session.add(user)
-    planet1 = Planet(name="Tattoine",diameter=10465,rotation_period=23,orbital_period=304,gravity="1 standard",population=200000,climate="arid",terrain="desert",surface_water=1)
-    db.session.add(planet1)
-    planet2 = Planet(name="Alderaan",diameter=12500,rotation_period=24,orbital_period=364,gravity="1 standard",population=2000000000,climate="temperate",terrain="grassland,mountains",surface_water=40)
-    db.session.add(planet2)
+#     user = User(email="prueba@prueba.com",password="starwars",is_active=True)
+#     db.session.add(user)
+#     planet1 = Planet(name="Tattoine",diameter=10465,rotation_period=23,orbital_period=304,gravity="1 standard",population=200000,climate="arid",terrain="desert",surface_water=1)
+#     db.session.add(planet1)
+#     planet2 = Planet(name="Alderaan",diameter=12500,rotation_period=24,orbital_period=364,gravity="1 standard",population=2000000000,climate="temperate",terrain="grassland,mountains",surface_water=40)
+#     db.session.add(planet2)
 
-    character = Character(name="Luke Skywalker",height=172,mass=77,hair_color="blond",skin_color="fair",eye_color="blue",birth_year="19BBY",gender="male",planet_id=1)
-    db.session.add(character)
-    character2 = Character(name="Leia Organa",height=150,mass=49,hair_color="brown",skin_color="light",eye_color="brown",birth_year="19BBY",gender="female",planet_id=2)
-    db.session.add(character2)
-    specie= Specie(name="Human",classification="mammal",designation="sentient",average_height=180,average_lifespan=120,hair_colors="blonde, brown, black, red",skin_colors="caucasian, black, asian, hispanic",eye_colors="brown, blue, green, hazel, grey, amber",language="Galactic Basic",planet_id=1)
-    db.session.add(specie)
-    film = Film(title="A New Hope",episode_id=4,producer="Gary Kurtz, Rick McCallum",director="George Lucas",release_date="1977-05-25",opening="It is a period of civil war. Rebel spaceships, striking from a hidden base, have won their first victory against the evil Galactic Empire. During the battle, Rebel spies managed to steal secret plans to the Empire's ultimate weapon, the DEATH STAR, an armored space station with enough power to destroy an entire planet. Pursued by the Empire's sinister agents, Princess Leia races home aboard her starship, custodian of the stolen plans that can save her people and restore freedom to the galaxy....")
-    db.session.add(film)
+#     character = Character(name="Luke Skywalker",height=172,mass=77,hair_color="blond",skin_color="fair",eye_color="blue",birth_year="19BBY",gender="male",planet_id=1)
+#     db.session.add(character)
+#     character2 = Character(name="Leia Organa",height=150,mass=49,hair_color="brown",skin_color="light",eye_color="brown",birth_year="19BBY",gender="female",planet_id=2)
+#     db.session.add(character2)
+#     specie= Specie(name="Human",classification="mammal",designation="sentient",average_height=180,average_lifespan=120,hair_colors="blonde, brown, black, red",skin_colors="caucasian, black, asian, hispanic",eye_colors="brown, blue, green, hazel, grey, amber",language="Galactic Basic",planet_id=1)
+#     db.session.add(specie)
+#     film = Film(title="A New Hope",episode_id=4,producer="Gary Kurtz, Rick McCallum",director="George Lucas",release_date="1977-05-25",opening="It is a period of civil war. Rebel spaceships, striking from a hidden base, have won their first victory against the evil Galactic Empire. During the battle, Rebel spies managed to steal secret plans to the Empire's ultimate weapon, the DEATH STAR, an armored space station with enough power to destroy an entire planet. Pursued by the Empire's sinister agents, Princess Leia races home aboard her starship, custodian of the stolen plans that can save her people and restore freedom to the galaxy....")
+#     db.session.add(film)
 
-    db.session.commit()
-   
-
-    
-
-    return jsonify({"msg","done"}), 200 
+#     db.session.commit()
+#     return jsonify({"msg","done"}), 200 
 
 
 # this only runs if `$ python src/main.py` is executed
