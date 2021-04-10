@@ -34,9 +34,9 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-#----------------------------------------------USER & FAVORITES----------------------------------------
+#----------------------------------------------USER ENDPOINTS----------------------------------------
 
-
+#Create an user
 @app.route('/register', methods=['POST'])
 def create_user():
     email= request.json.get("email",None)
@@ -53,6 +53,7 @@ def create_user():
     else:
         return jsonify({"msj":"User already exists"}),401
 
+#Login
 @app.route('/login',methods=['POST'])
 def login():
     email= request.json.get("email",None)
@@ -60,28 +61,22 @@ def login():
     user = User.query.filter_by(email=email,password=password).first()
     if user:
         access_token = create_access_token(identity=user.id)
-        return jsonify({"token":access_token}),200
-    else:
-        return jsonify({"msj":"Error"}),401
-
-@app.route('/user',methods=['POST'])
-def get_user():
-    email= request.json.get("email",None)
-    password= request.json.get("password",None)
-    user = User.query.filter_by(email=email,password=password).first()
-    if user:
-        return jsonify(user.serialize()),200
+        return jsonify({"token":access_token, "user":user.id}),200
     else:
         return jsonify({"msj":"Error"}),401
 
 
 #Return all users
 @app.route('/user', methods=['GET'])
+@jwt_required()
 def get_all_users():
 
     result = User.query.all()
     all_users = list(map(lambda x: x.serialize(), result))
     return jsonify(all_users), 200
+
+
+#----------------------------------------------FAVORITES ENDPOINTS----------------------------------------
 
 #Return favorites of a user
 @app.route('/user/<int:tid>/favorites', methods=['GET'])
@@ -131,6 +126,7 @@ def delete_favorite(fid):
 
     return jsonify(response), 200    
 
+#Get a favorite
 @app.route('/favorite',methods=['POST'])
 @jwt_required()
 def get_favorite():
@@ -144,7 +140,7 @@ def get_favorite():
     else:
         return jsonify({"msj":"Error"}),401
 
-#----------------------------------------------PLANET----------------------------------------
+#----------------------------------------------PLANETS ENDPOINTS----------------------------------------
 
 #Get all Planets
 @app.route('/planet', methods=['GET'])
@@ -166,7 +162,7 @@ def get_planet(id):
   
     return jsonify(planet.serialize()), 200    
 
-#----------------------------------------------CHARACTER----------------------------------------
+#----------------------------------------------CHARACTERS ENDPOINTS----------------------------------------
 
 #Get all characters
 @app.route('/character', methods=['GET'])
@@ -188,7 +184,7 @@ def get_character(id):
   
     return jsonify(character.serialize()), 200   
 
-#----------------------------------------------SPECIE----------------------------------------
+#----------------------------------------------SPECIES ENDPOINTS----------------------------------------
 
 #Get all Species
 @app.route('/specie', methods=['GET'])
@@ -211,7 +207,7 @@ def get_specie(id):
     return jsonify(specie.serialize()), 200   
 
 
-#----------------------------------------------FILM----------------------------------------
+#----------------------------------------------FILMS ENDPOINTS----------------------------------------
 
 #Get all Films
 @app.route('/film', methods=['GET'])
@@ -234,6 +230,7 @@ def get_film(id):
     return jsonify(film.serialize()), 200   
 
 
+#----------------------------------------------DATA TESTING ENDPOINT----------------------------------------
 
 # #Insert a favorite
 # @app.route('/data', methods=['GET'])
